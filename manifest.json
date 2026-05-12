@@ -1,0 +1,54 @@
+{
+  "manifest_version": 2,
+  "name": "Privacy Monitor",
+  "version": "1.0.0",
+  "description": "Detecta sinais de rastreamento e ameaças de privacidade durante a navegação.",
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "cookies",
+    "storage",
+    "tabs",
+    "activeTab",
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": ["privacy_monitor.js"],
+    "persistent": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content_script.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "browser_action": {
+    "default_title": "Privacy Monitor",
+    "default_popup": "popup/popup.html"
+  },
+  "applications": {
+    "gecko": {
+      "id": "privacy-monitor@example.local"
+    }
+  },
+  "data_collection_permissions": {
+    "required": false,
+    "collected_data": [
+      {
+        "category": "navegacao",
+        "data": [
+          "dominios_requisicoes",
+          "metadados_armazenamento",
+          "metadados_cookies",
+          "eventos_fingerprinting"
+        ],
+        "purposes": [
+          "analise_local_privacidade"
+        ],
+        "stored_locally_only": true,
+        "shared_with_third_parties": false
+      }
+    ]
+  }
+}

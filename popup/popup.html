@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Monitor</title>
+    <style>
+      :root {
+        --ok: #1f7a1f;
+        --warn: #9a6700;
+        --bad: #b42318;
+        --bg: #f8fafc;
+        --card: #ffffff;
+        --text: #0f172a;
+      }
+      body {
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        margin: 0;
+        width: 420px;
+        background: var(--bg);
+        color: var(--text);
+      }
+      .wrap {
+        padding: 12px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+      h2 {
+        margin: 0 0 6px;
+        font-size: 14px;
+      }
+      ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .score {
+        font-weight: 700;
+        font-size: 18px;
+      }
+      .ok { color: var(--ok); }
+      .warn { color: var(--warn); }
+      .bad { color: var(--bad); }
+      .muted {
+        color: #475569;
+        font-size: 12px;
+      }
+      .small {
+        font-size: 12px;
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h1>Privacy Monitor</h1>
+        <div id="score" class="score">Carregando...</div>
+        <div id="band" class="small"></div>
+      </div>
+
+      <div class="card">
+        <h2>Conexoes de 3a parte</h2>
+        <ul id="thirdPartyList"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Hijacking / Hooking</h2>
+        <div class="small">Scripts suspeitos: <span id="suspiciousCount" class="mono">0</span></div>
+        <div class="small">Redirects suspeitos: <span id="redirectCount" class="mono">0</span></div>
+      </div>
+
+      <div class="card">
+        <h2>Web Storage e IndexedDB</h2>
+        <div id="storageSummary" class="small"></div>
+      </div>
+
+      <div class="card">
+        <h2>Cookies</h2>
+        <div id="cookiesSummary" class="small"></div>
+        <div id="supercookies" class="small muted"></div>
+      </div>
+
+      <div class="card">
+        <h2>Fingerprinting</h2>
+        <ul id="fpList"></ul>
+      </div>
+
+      <div class="card">
+        <h2>Detalhamento do Score</h2>
+        <ul id="scoreBreakdown"></ul>
+      </div>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>
