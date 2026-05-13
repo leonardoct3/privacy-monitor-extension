@@ -1,5 +1,3 @@
-Extensão validada em ambiente controlado
-
 # privacy-monitor-extension
 
 Extensão para navegador Firefox para detecção de ameaças à privacidade e rastreamento em cliente web.
@@ -16,7 +14,7 @@ Extensão para navegador Firefox para detecção de ameaças à privacidade e ra
 1. Conexões de terceira parte
 - Interceptação via `webRequest`.
 - Classificação por tipo de recurso (`script`, `image`, `sub_frame`, `xmlhttprequest`, etc.).
-- Classificação 1ª vs 3ª parte por comparação de domínio registrável.
+- Classificação 1ª vs 3ª parte por comparação de domínio registrável, com heurística de marca (ex.: `adidas.com` e `adidas.com.br` tratados como mesma parte).
 
 2. Detecção de hijacking/hooking
 - Sinalização de scripts externos suspeitos por origem não relacionada ao site atual.
@@ -46,7 +44,7 @@ Pesos:
 - Domínios de 3ª parte: `-3` por domínio, com limite mínimo de `-30`.
 - Fingerprinting detectado: `-20` por técnica (Canvas, WebGL, Audio).
 - Cookies de 3ª parte: `-5` por cookie, com limite mínimo de `-15`.
-- Scripts suspeitos: `-10` por script.
+- Scripts suspeitos: `-3` por script, com limite mínimo de `-30`.
 - Web Storage com dados: `-5` (penalidade única).
 
 Classificação:
@@ -55,7 +53,8 @@ Classificação:
 - `0-49`: Vermelho (crítico)
 
 Justificativa resumida:
-- Fingerprinting e scripts suspeitos recebem maior peso por maior risco de rastreamento persistente e execução ativa.
+- Fingerprinting mantém peso alto por maior risco de rastreamento persistente e execução ativa.
+- Scripts suspeitos têm peso limitado para evitar saturação em sites com muitos scripts de rastreamento comuns; a heurística exclui CDNs e fornecedores amplamente usados.
 - Terceira parte e cookies têm efeito acumulativo, com limite para evitar saturação excessiva.
 - Storage tem peso moderado por representar persistência local, sem implicar necessariamente comportamento malicioso.
 
@@ -63,3 +62,24 @@ Justificativa resumida:
 
 - A extensão foi projetada para Firefox com Manifest V2 e APIs `webRequest`/`cookies`.
 - `data_collection_permissions` descreve coleta local para análise, sem compartilhamento externo.
+
+## Instalação (Firefox)
+
+1. Faça o clone ou o download deste repositório para o seu computador.
+2. Abra o Firefox e digite `about:debugging` na barra de endereços.
+3. Clique em "This Firefox" (ou "Este Firefox") no menu lateral esquerdo.
+4. Clique no botão "Load Temporary Add-on..." (ou "Carregar extensão temporária...").
+5. Navegue até a pasta onde você salvou este repositório e selecione o arquivo `manifest.json`.
+6. A extensão será instalada temporariamente e o ícone do Privacy Monitor aparecerá na barra de ferramentas do navegador.
+
+## Como Usar
+
+1. Navegue normalmente pela internet.
+2. Ao acessar um site, clique no ícone da extensão (um pequeno escudo/ícone na barra superior direita do Firefox).
+3. O painel (popup) será aberto exibindo o **Privacy Score** da página atual e detalhando:
+   - Quais domínios de terceira parte foram contatados e quais tipos de recursos carregaram.
+   - Sinais de sequestro de navegador (Hijacking / Hooking), como scripts suspeitos e redirecionamentos não autorizados.
+   - Resumo detalhado do uso de armazenamento local (Web Storage, IndexedDB) e tamanho ocupado.
+   - Quantificação de cookies (diferenciando os de 1ª e 3ª parte, sessão/persistentes) e potenciais supercookies detectados.
+   - Quais APIs do navegador tentaram ser utilizadas para Fingerprinting (Canvas, WebGL, AudioContext).
+4. O *Score* apontará se a página atual é segura (Verde), moderada (Amarela) ou crítica (Vermelha) para a sua privacidade.

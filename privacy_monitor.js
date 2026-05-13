@@ -64,12 +64,28 @@
     return `${sld}.${tld}`;
   }
 
+  function getSecondLevelLabel(hostname) {
+    const reg = getRegistrableDomain(hostname);
+    const parts = reg.split(".").filter(Boolean);
+    if (parts.length < 2) return "";
+    return parts[parts.length - 2];
+  }
+
+  function isSameBrandDomain(hostA, hostB) {
+    const a = getSecondLevelLabel(hostA);
+    const b = getSecondLevelLabel(hostB);
+    if (!a || !b) return false;
+    return a === b;
+  }
+
   function isThirdParty(pageUrl, reqUrl) {
     const p = safeUrl(pageUrl);
     const r = safeUrl(reqUrl);
     if (!p || !r) return false;
     const pReg = getRegistrableDomain(p.hostname);
     const rReg = getRegistrableDomain(r.hostname);
+    if (pReg && rReg && pReg === rReg) return false;
+    if (isSameBrandDomain(p.hostname, r.hostname)) return false;
     return pReg && rReg ? pReg !== rReg : p.hostname !== r.hostname;
   }
 
@@ -84,8 +100,43 @@
 
     if (reqDomain.endsWith(pageDomain)) return false;
 
-    const knownInfra = ["cloudflare", "akamai", "fastly", "jsdelivr", "unpkg"];
-    return !knownInfra.some((k) => reqDomain.includes(k));
+    const knownInfra = [
+      "cloudflare",
+      "akamai",
+      "fastly",
+      "jsdelivr",
+      "unpkg",
+      "cloudfront",
+      "cdn",
+      "static",
+      "assets"
+    ];
+    if (knownInfra.some((k) => reqDomain.includes(k))) return false;
+
+    const knownVendors = [
+      "googletagmanager",
+      "google-analytics",
+      "googlesyndication",
+      "doubleclick",
+      "gstatic",
+      "facebook",
+      "fbcdn",
+      "newrelic",
+      "datadoghq",
+      "segment",
+      "mixpanel",
+      "hotjar",
+      "clarity",
+      "tiktok",
+      "pinterest",
+      "reddit",
+      "adsrvr",
+      "bing",
+      "amazon-adsystem",
+      "singular",
+      "mpulse"
+    ];
+    return !knownVendors.some((k) => reqDomain.includes(k));
   }
 
   async function updateTabUrl(tabId) {
@@ -125,7 +176,7 @@
     score += cookiePenalty;
     breakdown.push({ label: "Cookies de 3a parte", value: cookiePenalty });
 
-    const suspiciousPenalty = -10 * snapshot.suspiciousScripts.length;
+    const suspiciousPenalty = Math.max(-30, -3 * snapshot.suspiciousScripts.length);
     score += suspiciousPenalty;
     breakdown.push({ label: "Scripts suspeitos", value: suspiciousPenalty });
 
@@ -183,13 +234,26 @@
     const tabUrl = safeUrl(s.tabUrl);
     if (!tabUrl || !tabUrl.hostname) return;
 
-    const cookies = await browser.cookies.getAll({});
+    const cookies = await browser.cookies.getAll({ url: tabUrl.href });
+    // Para cookies de terceira parte associados as requisicoes feitas, precisariamos buscar por dominio
+    // Mas para simplificar e focar apenas na aba atual, pegaremos todos e filtraremos
+    const allCookies = await browser.cookies.getAll({});
+    
     const firstParty = [];
     const thirdParty = [];
     const session = [];
     const persistent = [];
 
-    for (const ck of cookies) {
+    const tabRegDomain = getRegistrableDomain(tabUrl.hostname);
+    const contactedDomains = new Set(Array.from(s.thirdPartyDomains).map(getRegistrableDomain));
+    contactedDomains.add(tabRegDomain);
+
+    const relevantCookies = allCookies.filter(ck => {
+      const cookieRegDomain = getRegistrableDomain((ck.domain || "").replace(/^\./, ""));
+      return contactedDomains.has(cookieRegDomain);
+    });
+
+    for (const ck of relevantCookies) {
       const cookieDomain = (ck.domain || "").replace(/^\./, "");
       const row = {
         name: ck.name,
@@ -199,7 +263,7 @@
         expirationDate: ck.expirationDate || null
       };
 
-      const sameParty = getRegistrableDomain(cookieDomain) === getRegistrableDomain(tabUrl.hostname);
+      const sameParty = getRegistrableDomain(cookieDomain) === tabRegDomain;
       if (sameParty) firstParty.push(row);
       else thirdParty.push(row);
 
@@ -208,7 +272,7 @@
     }
 
     s.cookiesSummary = {
-      all: cookies.map((c) => ({
+      all: relevantCookies.map((c) => ({
         name: c.name,
         domain: c.domain,
         path: c.path,
